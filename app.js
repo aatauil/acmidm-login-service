@@ -5,8 +5,9 @@ import { getAccessToken } from './lib/openid';
 import { roleClaim, groupIdClaim, removeOldSessions, removeCurrentSession,
          ensureUserAndAccount, insertNewSessionForAccount,
          selectAccountBySession, selectCurrentSession,
-         selectBestuurseenheidByNumber } from './lib/session';
+         selectGroupByNumber } from './lib/session';
 import request from 'request';
+import { GROUP_TYPE_LABEL } from './config';
 
 const logsGraph = process.env.LOGS_GRAPH || 'http://mu.semte.ch/graphs/public';
 
@@ -70,7 +71,7 @@ app.post('/sessions', async function(req, res, next) {
     if (process.env['LOG_SINK_URL'])
       request.post({ url: process.env['LOG_SINK_URL'], body: tokenSet, json: true });
 
-    const { groupUri, groupId } = await selectBestuurseenheidByNumber(claims);
+    const { groupUri, groupId } = await selectGroupByNumber(claims);
 
     if (!groupUri || !groupId) {
       console.log(`User is not allowed to login. No bestuurseenheid found for roles ${JSON.stringify(claims[roleClaim])}`);
@@ -105,8 +106,8 @@ app.post('/sessions', async function(req, res, next) {
           data: { type: 'accounts', id: accountId }
         },
         group: {
-          links: { related: `/bestuurseenheden/${groupId}` },
-          data: { type: 'bestuurseenheden', id: groupId }
+          links: { related: `/${GROUP_TYPE_LABEL}/${groupId}` },
+          data: { type: GROUP_TYPE_LABEL, id: groupId }
         }
       }
     });
@@ -175,8 +176,8 @@ app.get('/sessions/current', async function(req, res, next) {
           data: { type: 'accounts', id: accountId }
         },
         group: {
-          links: { related: `/bestuurseenheden/${groupId}` },
-          data: { type: 'bestuurseenheden', id: groupId }
+          links: { related: `/${GROUP_TYPE_LABEL}/${groupId}` },
+          data: { type: GROUP_TYPE_LABEL, id: groupId }
         }
       }
     });
